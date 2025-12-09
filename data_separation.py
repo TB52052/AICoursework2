@@ -11,13 +11,13 @@ print(len(test))
 print(len(val))
 
 #setting training label and data
-X_train = train.drop(['gesture', 'filename'],axis=1).to_numpy()
+X_train = train.drop(['gesture', 'filename', 'hand'],axis=1).to_numpy()
 y_train = train['gesture'].to_numpy()
 
 #setting testing label and data
-X_test = test.drop(['gesture', 'filename'],axis=1).to_numpy()
+X_test = test.drop(['gesture', 'filename', 'hand'],axis=1).to_numpy()
 y_test = test['gesture'].to_numpy()
 
 #setting validating label and data
-X_val = val.drop(['gesture', 'filename'],axis=1).to_numpy()
+X_val = val.drop(['gesture', 'filename', 'hand'],axis=1).to_numpy()
 y_val = val['gesture'].to_numpy()
