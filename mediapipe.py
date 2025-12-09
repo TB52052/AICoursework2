@@ -26,7 +26,7 @@ options = HandLandmarkerOptions(
     running_mode=VisionRunningMode.IMAGE)
 
 #capturing the label data
-header = ["gesture", "filename",]
+header = ["gesture", "filename", "hand"]
 #capturing the positional coordinates
 for i in range(21):
     header += [f"lm{i}_x", f"lm{i}_y", f"lm{i}_z"]
@@ -61,20 +61,26 @@ with open(output_csv, mode="w", newline="") as f:
 
                 #saving each piece of information to .csv file 
                 for idx, hand_landmarks in enumerate(result.hand_landmarks):
-                    row = [folder, filename]
+                    
+                    hand = result.handedness[idx][0].category_name #LEFT or RIGHT hand
+                    
+                    row = [folder, filename, hand]
 
                     # Flatten landmarks x,y,z
                     for lm in hand_landmarks:
                         #this ensures correct number formatting
                         row += [f'{lm.x:.8f}', f'{lm.y:.8f}', f'{lm.z:.8f}']
                     
-                    #write hand co-ordinate to .csv file
-                    writer.writerow(row)
+                    
+                    #only submits hands that are the RIGHT hands
+                    if hand == "Right":
+                        #write hand co-ordinate to .csv file
+                        writer.writerow(row)
                     
 print("CSV file saved to:", output_csv)
 
 #capturing global landmarks 
-
+'''
 #open csv for writing to 
 with open(output_world_csv, mode="w", newline="") as f:
     writer = csv.writer(f)
@@ -113,7 +119,7 @@ with open(output_world_csv, mode="w", newline="") as f:
                     writer.writerow(row)
 
 print("CSV file saved to:", output_world_csv)
-
+'''
 
 data = pd.read_csv('hand_landmarks.csv')
 #print(data)
