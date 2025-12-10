@@ -8,6 +8,7 @@ import os
 import csv
 
 import pandas as pd
+import numpy as np
 
 model_path = r"C:\Users\taylo\Documents\UNI\Modules\CMP-6058A-25-SEM1-A - Artificial Intelligence\Coursework 2\model_folder\hand_landmarker.task"
 dataset_path = r"C:\Users\taylo\Documents\UNI\Modules\CMP-6058A-25-SEM1-A - Artificial Intelligence\Coursework 2\Datasets\CW2_dataset_final"
@@ -78,9 +79,9 @@ with open(output_csv, mode="w", newline="") as f:
                         writer.writerow(row)
                     
 print("CSV file saved to:", output_csv)
-
-#capturing global landmarks 
 '''
+#capturing global landmarks 
+
 #open csv for writing to 
 with open(output_world_csv, mode="w", newline="") as f:
     writer = csv.writer(f)
@@ -121,5 +122,49 @@ with open(output_world_csv, mode="w", newline="") as f:
 print("CSV file saved to:", output_world_csv)
 '''
 
-data = pd.read_csv('hand_landmarks.csv')
+df = pd.read_csv('hand_landmarks.csv')
 #print(data)
+
+data = df.drop(['filename', 'hand'],axis=1)
+
+#group by gesture
+grouped = data.groupby("gesture")
+
+#compute the mean of each column in the .csv (returns 63 means and sd)
+gesture_mean = grouped.mean(numeric_only=True)
+gesture_std = grouped.std(numeric_only=True, ddof=1)
+
+#keep data within 3 standard deviations
+k = 3 
+#Standard Deviation was orginally set to 2, however that means only 2344/3648 would be kept
+#the decision has been made to keep k = 3 to ensure sufficient data for training 
+
+valid_rows = []
+
+for idx, row in data.iterrows():
+    gesture = row["gesture"]
+
+    #drop gesture column to have only numeric values
+    values = row.drop("gesture").to_numpy(dtype=float)
+
+    #calculating the mean and std for each gesture
+    mean_vals = gesture_mean.loc[gesture].to_numpy(dtype=float)
+    std_vals  = gesture_std.loc[gesture].to_numpy(dtype=float)
+
+    # comparing against all values for that gesture (within 3 std)
+    diff = np.abs(values - mean_vals)
+    within_range = diff <= (k * std_vals)
+
+    #if within range then added to valid rows list
+    if np.all(within_range):
+        valid_rows.append(row)
+
+#creates a new .csv with the "valid" rows
+valid_df = pd.DataFrame(valid_rows)
+valid_df.to_csv("hand_landmarks_valid.csv", index=False)
+
+print("Original:", len(data))
+print("Kept:", len(valid_df))
+
+
+
