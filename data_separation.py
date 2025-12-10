@@ -1,4 +1,7 @@
-data = pd.read_csv('hand_landmarks.csv')
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
+data = pd.read_csv('hand_landmarks_valid.csv')
 #print(data)
 
 #splitting into different sets for training, testing and validating
@@ -11,13 +14,13 @@ print(len(test))
 print(len(val))
 
 #setting training label and data
-X_train = train.drop(['gesture', 'filename', 'hand'],axis=1).to_numpy()
+X_train = train.drop(['gesture'],axis=1).to_numpy()
 y_train = train['gesture'].to_numpy()
 
 #setting testing label and data
-X_test = test.drop(['gesture', 'filename', 'hand'],axis=1).to_numpy()
+X_test = test.drop(['gesture'],axis=1).to_numpy()
 y_test = test['gesture'].to_numpy()
 
 #setting validating label and data
-X_val = val.drop(['gesture', 'filename', 'hand'],axis=1).to_numpy()
+X_val = val.drop(['gesture'],axis=1).to_numpy()
 y_val = val['gesture'].to_numpy()
