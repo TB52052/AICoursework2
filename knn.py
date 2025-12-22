@@ -7,6 +7,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
+import sklearn.metrics as metrics
+
 
 import math
 from collections import Counter
@@ -184,6 +186,9 @@ if __name__=='__main__':
         
     k = 10
     #the larger the k the more accurate however longer processing time
+    #k = 10 has found to provide the most accuracy:
+    #KNN Euclidean Accuracy: 0.9692780337941628
+    #KNN Manhattan Accuracy: 0.9477726574500768
     
     print("K =", k)
 
@@ -192,3 +197,13 @@ if __name__=='__main__':
 
     print("KNN Euclidean Accuracy:", accuracy(y_test, y_pred_eu))
     print("KNN Manhattan Accuracy:", accuracy(y_test, y_pred_man))
+    
+    #using a confussion matrix to represent the results
+    disp_eu = metrics.ConfusionMatrixDisplay.from_predictions(y_test, y_pred_eu)
+    disp_eu.figure_.suptitle("Confusion Matrix - Euclidian Accuracy")
+    
+    disp_man = metrics.ConfusionMatrixDisplay.from_predictions(y_test, y_pred_man)
+    disp_man.figure_.suptitle("Confusion Matrix - Manhattan Accuracy")
+    plt.show()
+    
+    decision_tree()
