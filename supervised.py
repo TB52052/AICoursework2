@@ -206,4 +206,11 @@ if __name__=='__main__':
     disp_man.figure_.suptitle("Confusion Matrix - Manhattan Accuracy")
     plt.show()
     
+    print("=== Euclidian Classification Report ===")
+    print(classification_report(y_test, y_pred_eu, digits=3))
+    
+    print("=== Manhattan Classification Report ===")
+    print(classification_report(y_test, y_pred_man, digits=3))
+
+    
     decision_tree()
