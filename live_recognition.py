@@ -4,6 +4,10 @@ import sklearn.neighbors as nb
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
+import math
+import numpy as np
+from collections import Counter
+
 #load dataset
 data = pd.read_csv('hand_landmarks_valid.csv')
 
@@ -21,12 +25,44 @@ y_train = train['gesture'].to_numpy()
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 
-#train model 
-knn_model = nb.KNeighborsClassifier(
-    n_neighbors=6,
-    metric='euclidean'
-)
-knn_model.fit(X_train_scaled, y_train)
+# distance functions
+def get_euclidean(v1, v2):
+    return math.sqrt(sum((a - b) ** 2 for a, b in zip(v1, v2)))
+
+def get_manhattan(v1, v2):
+    return sum(abs(a - b) for a, b in zip(v1, v2))
+
+# Manual KNN
+def knn(X_train, y_train, X_test, k=3, distance_metric='euclidean'):
+    
+    if distance_metric == 'euclidean':
+        dist_func = get_euclidean
+    elif distance_metric == 'manhattan':
+        dist_func = get_manhattan
+        
+    predictions = []
+
+    for x1 in X_test:
+        # computing the distance to all training points (where x1 is test and x2 is train)
+        distances = [(dist_func(x1, x2), label) 
+                     for x2, label in zip(X_train, y_train)]
+        
+        #sort by distance
+        distances = sorted(distances)
+        
+        #selecting the k nearest
+        k_nearest = distances[:k]
+        
+        #inspecting the most common label in the k nearest
+        k_labels = [y for _, y in k_nearest] #just taking the label
+        #1 is top of list and [0][0] leaves just the label 
+        most_common = Counter(k_labels).most_common(1)[0][0] 
+        predictions.append(most_common)
+    
+    return predictions
+
+
+
 
 #taken from original mediapipe implementation and used to convert points into data coordinates
 def landmarks_to_feature_vector(hand_landmarks):
@@ -78,7 +114,13 @@ while cap.isOpened():
 
             #using the above scaler and then forming a prediction with the trained model
             feature_vector_scaled = scaler.transform(feature_vector)
-            prediction = knn_model.predict(feature_vector_scaled)[0]
+            prediction = knn(
+    X_train_scaled,
+    y_train,
+    feature_vector_scaled,
+    k=6,
+    distance_metric='euclidean'
+)[0]
 
             #displaying prediction as label
             cv2.putText(
