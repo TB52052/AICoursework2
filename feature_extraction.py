@@ -84,52 +84,6 @@ with open(output_csv, mode="w", newline="") as f:
                         writer.writerow(row)
                     
 print("CSV file saved to:", output_csv)
-'''
-#capturing global landmarks 
-
-#open csv for writing to 
-with open(output_world_csv, mode="w", newline="") as f:
-    writer = csv.writer(f)
-    writer.writerow(header)
-
-    #create handlandmarker 
-    #taken from Hand landmarks detection guide for Python (google - link provided in CW)
-    with HandLandmarker.create_from_options(options) as landmarker:
-
-        #loop through all folders a-j
-        for folder in sorted(os.listdir(dataset_path)):
-            folder_path = os.path.join(dataset_path, folder)
-            
-            # Skip if not a directory (e.g., .DS_Store files)
-            if not os.path.isdir(folder_path):
-                continue
-            
-            #loop through contents of each folder
-            for filename in os.listdir(folder_path):
-                #will only process .jpg files
-                if not filename.lower().endswith((".jpg")):
-                    continue
-
-                file_path = os.path.join(folder_path, filename)
-                #processing image
-                image = mp.Image.create_from_file(file_path)
-
-                #running the hand detection on the selected image
-                result = landmarker.detect(image)
-
-                #saving each piece of information to .csv file 
-                for idx, hand_world_landmarks in enumerate(result.hand_world_landmarks):
-                    row = [folder, filename]
-
-                    # Flatten landmarks x,y,z
-                    for lm in hand_world_landmarks:
-                        row += [lm.x, lm.y, lm.z]
-                    
-                    #write hand co-ordinate to .csv file
-                    writer.writerow(row)
-
-print("CSV file saved to:", output_world_csv)
-'''
 
 df = pd.read_csv('hand_landmarks.csv')
 #print(data)
