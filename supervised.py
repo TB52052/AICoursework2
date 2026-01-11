@@ -206,21 +206,26 @@ def cross_validation_evaluation():
     # Set up cross-validation (from lab)
     kfold = KFold(n_splits=n_folds, shuffle=False)
     
-    # Get best k from optimization
+    # Get best k from optimization (already determined in Part 1)
+    # We'll use the best_k that was found during hyperparameter optimization
+    
+    print(f"\nEvaluating classifiers with {n_folds}-fold cross-validation...")
+    print("Using X_train and y_train for cross-validation")
+    print()
+    
+    # Get best k from previous optimization
     euclidean_accuracies = []
     k_values = [1, 3, 5, 7, 9, 11, 13, 15]
-    for k in k_values:
-        knn_eu = nb.KNeighborsClassifier(n_neighbors=k, metric='euclidean')
+    for k_test in k_values:
+        #Note: Using sklearn for cross-validation as manual implementation
+        #  would be computationally expensive with 5-fold CV
+        knn_eu = nb.KNeighborsClassifier(n_neighbors=k_test, metric='euclidean')
         knn_eu.fit(X_train, y_train)
         y_pred_eu = knn_eu.predict(X_test)
         acc_eu = accuracy_score(y_test, y_pred_eu)
         euclidean_accuracies.append(acc_eu)
     best_knn_accuracy = max(euclidean_accuracies)
     best_k = k_values[euclidean_accuracies.index(best_knn_accuracy)]
-    
-    print(f"\nEvaluating classifiers with {n_folds}-fold cross-validation...")
-    print("Using X_train and y_train for cross-validation")
-    print()
     
     # 1. KNN with best k (from lab pattern)
     print(f"[1/3] KNN (k={best_k}, Euclidean):")
@@ -412,47 +417,69 @@ if __name__=='__main__':
     print("#"*60)
     cv_scores_knn, cv_scores_dt, cv_scores_perc = cross_validation_evaluation()
     
-    print("\n\n" + "#"*60)
-    print("# PART 3: DETAILED EVALUATION WITH OPTIMAL PARAMETERS")
-    print("#"*60)
-    
+    # Combine train and validation data for final model training
+    X_train_full = np.vstack([X_train, X_val])
+    y_train_full = np.concatenate([y_train, y_val])
     k = best_k
-    print(f"\nUsing optimal k = {k} (from optimization)")
-    print(f"Best KNN accuracy found: {best_accuracy:.4f}")
-
-    y_pred_eu = knn(X_train, y_train, X_test, k=k, distance_metric='euclidean')
-    y_pred_man = knn(X_train, y_train, X_test, k=k, distance_metric='manhattan')
-
-    print("KNN Euclidean Accuracy:", accuracy(y_test, y_pred_eu))
-    print("KNN Manhattan Accuracy:", accuracy(y_test, y_pred_man))
     
-    #using a confussion matrix to represent the results
-    disp_eu = metrics.ConfusionMatrixDisplay.from_predictions(y_test, y_pred_eu)
-    disp_eu.figure_.suptitle("Confusion Matrix - Euclidian Accuracy")
+    # Retrain all models on combined data
+    knn_final = nb.KNeighborsClassifier(n_neighbors=k, metric='euclidean')
+    knn_final.fit(X_train_full, y_train_full)
+    y_pred_knn_final = knn_final.predict(X_test)
+    knn_final_accuracy = accuracy_score(y_test, y_pred_knn_final)
     
-    disp_man = metrics.ConfusionMatrixDisplay.from_predictions(y_test, y_pred_man)
-    disp_man.figure_.suptitle("Confusion Matrix - Manhattan Accuracy")
+    dt_final = tree.DecisionTreeClassifier(random_state=7107)
+    dt_final.fit(X_train_full, y_train_full)
+    y_pred_dt_final = dt_final.predict(X_test)
+    dt_final_accuracy = accuracy_score(y_test, y_pred_dt_final)
+    
+    perc_final = Perceptron(max_iter=100, random_state=7107, shuffle=True)
+    perc_final.fit(X_train_full, y_train_full)
+    y_pred_perc_final = perc_final.predict(X_test)
+    perc_final_accuracy = accuracy_score(y_test, y_pred_perc_final)
+
+    # Manual KNN implementation (coded from scratch)
+    y_pred_manual_eu = knn(X_train_full, y_train_full, X_test, k=k, distance_metric='euclidean')
+    manual_accuracy_eu = accuracy(y_test, y_pred_manual_eu)
+    
+    y_pred_manual_man = knn(X_train_full, y_train_full, X_test, k=k, distance_metric='manhattan')
+    manual_accuracy_man = accuracy(y_test, y_pred_manual_man)
+    
+    # Confusion matrices
+    print("\n" + "="*60)
+    print("CONFUSION MATRICES & CLASSIFICATION REPORTS")
+    print("="*60)
+    
+    disp_manual_eu = metrics.ConfusionMatrixDisplay.from_predictions(y_test, y_pred_manual_eu)
+    disp_manual_eu.figure_.suptitle(f"KNN (k={k}, Euclidean)")
+    
+    disp_manual_man = metrics.ConfusionMatrixDisplay.from_predictions(y_test, y_pred_manual_man)
+    disp_manual_man.figure_.suptitle(f"KNN (k={k}, Manhattan)")
     plt.show()
     
-    print("=== Euclidian Classification Report ===")
-    print(classification_report(y_test, y_pred_eu, digits=3))
+    print("\nKNN (Euclidean):")
+    print(classification_report(y_test, y_pred_manual_eu, digits=3))
     
-    print("=== Manhattan Classification Report ===")
-    print(classification_report(y_test, y_pred_man, digits=3))
+    print("\nKNN (Manhattan):")
+    print(classification_report(y_test, y_pred_manual_man, digits=3))
 
-    print("\n" + "="*60)
-    print("DECISION TREE CLASSIFIER")
-    print("="*60)
-    y_dt_pred = decision_tree()
+    disp_dt = metrics.ConfusionMatrixDisplay.from_predictions(y_test, y_pred_dt_final)
+    disp_dt.figure_.suptitle("Decision Tree")
+    plt.show()
+    print("\nDecision Tree:")
+    print(classification_report(y_test, y_pred_dt_final, digits=3))
     
-    # Run Perceptron classifier (3rd classifier)
-    y_perc_pred = perceptron_classifier()
+    disp_perc = metrics.ConfusionMatrixDisplay.from_predictions(y_test, y_pred_perc_final)
+    disp_perc.figure_.suptitle("Perceptron")
+    plt.show()
+    print("\nPerceptron:")
+    print(classification_report(y_test, y_pred_perc_final, digits=3))
     
     print("\n" + "="*60)
-    print("SUMMARY: All 3 Classifiers Evaluated")
+    print("FINAL RESULTS")
     print("="*60)
-    print(f"Manual KNN (k={k}, Euclidean): {accuracy(y_test, y_pred_eu):.4f}")
-    print(f"Manual KNN (k={k}, Manhattan): {accuracy(y_test, y_pred_man):.4f}")
-    print(f"Decision Tree: {accuracy_score(y_test, y_dt_pred):.4f}")
-    print(f"Perceptron: {accuracy_score(y_test, y_perc_pred):.4f}")
+    print(f"KNN (k={k}, Euclidean): {manual_accuracy_eu:.4f}")
+    print(f"KNN (k={k}, Manhattan):  {manual_accuracy_man:.4f}")
+    print(f"Decision Tree:          {dt_final_accuracy:.4f}")
+    print(f"Perceptron:             {perc_final_accuracy:.4f}")
     print("="*60)
