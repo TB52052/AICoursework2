@@ -14,6 +14,11 @@ from sklearn.linear_model import Perceptron
 import math
 import numpy as np
 from collections import Counter
+import os 
+
+OUTPUT_DIR = "Supervised_Plots"
+if not os.path.exists(OUTPUT_DIR):
+    os.makedirs(OUTPUT_DIR)
 
 data = pd.read_csv('hand_landmarks_valid.csv')
 #print(data)
@@ -137,8 +142,8 @@ def hyperparameter_optimization():
     ax.grid(True, alpha=0.3, axis='y')
     
     plt.tight_layout()
-    plt.savefig('knn_hyperparameter_comparison.png', dpi=300, bbox_inches='tight')
-    print("\nSaved: knn_hyperparameter_comparison.png")
+    plt.savefig(os.path.join(OUTPUT_DIR, 'knn_hyperparameter_comparison.png'), dpi=300, bbox_inches='tight')
+    print(f"Saved: {OUTPUT_DIR}/knn_hyperparameter_comparison.png")
     plt.show()
     
     # Train other classifiers with reasonable configs (not optimized)
@@ -182,8 +187,8 @@ def hyperparameter_optimization():
     ax.grid(True, alpha=0.3, axis='y')
     
     plt.tight_layout()
-    plt.savefig('classifier_comparison.png', dpi=300, bbox_inches='tight')
-    print("\nSaved: classifier_comparison.png")
+    plt.savefig(os.path.join(OUTPUT_DIR, 'classifier_comparison.png'), dpi=300, bbox_inches='tight')
+    print(f"Saved: {OUTPUT_DIR}/classifier_comparison.png")
     plt.show()
     
     print(f"\nBest KNN configuration: k={best_k}, Euclidean distance (Accuracy: {best_knn_accuracy:.4f})")
@@ -206,26 +211,21 @@ def cross_validation_evaluation():
     # Set up cross-validation (from lab)
     kfold = KFold(n_splits=n_folds, shuffle=False)
     
-    # Get best k from optimization (already determined in Part 1)
-    # We'll use the best_k that was found during hyperparameter optimization
-    
-    print(f"\nEvaluating classifiers with {n_folds}-fold cross-validation...")
-    print("Using X_train and y_train for cross-validation")
-    print()
-    
-    # Get best k from previous optimization
+    # Get best k from optimization
     euclidean_accuracies = []
     k_values = [1, 3, 5, 7, 9, 11, 13, 15]
-    for k_test in k_values:
-        #Note: Using sklearn for cross-validation as manual implementation
-        #  would be computationally expensive with 5-fold CV
-        knn_eu = nb.KNeighborsClassifier(n_neighbors=k_test, metric='euclidean')
+    for k in k_values:
+        knn_eu = nb.KNeighborsClassifier(n_neighbors=k, metric='euclidean')
         knn_eu.fit(X_train, y_train)
         y_pred_eu = knn_eu.predict(X_test)
         acc_eu = accuracy_score(y_test, y_pred_eu)
         euclidean_accuracies.append(acc_eu)
     best_knn_accuracy = max(euclidean_accuracies)
     best_k = k_values[euclidean_accuracies.index(best_knn_accuracy)]
+    
+    print(f"\nEvaluating classifiers with {n_folds}-fold cross-validation...")
+    print("Using X_train and y_train for cross-validation")
+    print()
     
     # 1. KNN with best k (from lab pattern)
     print(f"[1/3] KNN (k={best_k}, Euclidean):")
@@ -308,15 +308,15 @@ def nearest_neighbour():
     y_pred_man_mm = knn_man_mm.predict(X_test_mm)
 
     print("Accuracy (Euclidean, MinMax scaled):",
-         accuracy_score(y_test, y_pred_eu_mm))
+          accuracy_score(y_test, y_pred_eu_mm))
     print("Accuracy (Manhattan, MinMax scaled):",
-         accuracy_score(y_test, y_pred_man_mm))
+          accuracy_score(y_test, y_pred_man_mm))
     
     print()
     
     #using a 
     scaler_std = StandardScaler()
-    scaler_std.fit(X_train)          
+    scaler_std.fit(X_train)           
 
     X_train_std = scaler_std.transform(X_train)
     X_test_std = scaler_std.transform(X_test)
@@ -394,6 +394,9 @@ def perceptron_classifier():
     # Display confusion matrix
     disp_perc = metrics.ConfusionMatrixDisplay.from_predictions(y_test, y_perc_pred)
     disp_perc.figure_.suptitle("Confusion Matrix - Perceptron")
+    
+    plt.savefig(os.path.join(OUTPUT_DIR, 'confusion_matrix_perceptron.png'), dpi=300, bbox_inches='tight')
+    print(f"Saved: {OUTPUT_DIR}/confusion_matrix_perceptron.png")
     plt.show()
     
     # Detailed classification report
@@ -452,9 +455,12 @@ if __name__=='__main__':
     
     disp_manual_eu = metrics.ConfusionMatrixDisplay.from_predictions(y_test, y_pred_manual_eu)
     disp_manual_eu.figure_.suptitle(f"KNN (k={k}, Euclidean)")
+    plt.savefig(os.path.join(OUTPUT_DIR, 'confusion_matrix_knn_euclidean.png'), dpi=300, bbox_inches='tight')
     
     disp_manual_man = metrics.ConfusionMatrixDisplay.from_predictions(y_test, y_pred_manual_man)
     disp_manual_man.figure_.suptitle(f"KNN (k={k}, Manhattan)")
+    plt.savefig(os.path.join(OUTPUT_DIR, 'confusion_matrix_knn_manhattan.png'), dpi=300, bbox_inches='tight')
+    print(f"Saved KNN confusion matrices to {OUTPUT_DIR}")
     plt.show()
     
     print("\nKNN (Euclidean):")
@@ -465,12 +471,14 @@ if __name__=='__main__':
 
     disp_dt = metrics.ConfusionMatrixDisplay.from_predictions(y_test, y_pred_dt_final)
     disp_dt.figure_.suptitle("Decision Tree")
+    plt.savefig(os.path.join(OUTPUT_DIR, 'confusion_matrix_decision_tree.png'), dpi=300, bbox_inches='tight')
     plt.show()
     print("\nDecision Tree:")
     print(classification_report(y_test, y_pred_dt_final, digits=3))
     
     disp_perc = metrics.ConfusionMatrixDisplay.from_predictions(y_test, y_pred_perc_final)
     disp_perc.figure_.suptitle("Perceptron")
+    plt.savefig(os.path.join(OUTPUT_DIR, 'confusion_matrix_perceptron.png'), dpi=300, bbox_inches='tight')
     plt.show()
     print("\nPerceptron:")
     print(classification_report(y_test, y_pred_perc_final, digits=3))
